@@ -11,8 +11,7 @@
 @implementation PassthroughView
 
 @synthesize passer;
-@synthesize books;
-    
+
 // -----------------------------------------------------------------
 - (id)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];

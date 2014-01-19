@@ -10,6 +10,16 @@
 
 @implementation AppUtils
 
+// ---------------------------------------------------------------
+// Translate a view
+// ---------------------------------------------------------------
++(void)translateView:(UIView *)view position:(CGPoint)position {
+    if(view) {
+        CGRect rect = view.frame;
+        rect.origin = position;
+        view.frame = rect;
+    }
+}
 
 // ---------------------------------------------------------------
 // Map a value 
@@ -84,6 +94,72 @@
 + (NSString*)upperCaseFirstLetter:(NSString *)word {
     return [word stringByReplacingCharactersInRange:NSMakeRange(0,1)  
                                          withString:[[word  substringToIndex:1] capitalizedString]];
+}
+// ---------------------------------------------------------------
+// Read & Write text file
+// ---------------------------------------------------------------
++ (void)writeFile:(NSString *)fileName data:(id)data {
+
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *documentsDirectory = [paths objectAtIndex:0];
+    NSString *appFile = [documentsDirectory stringByAppendingPathComponent:fileName];
+    NSError *error=NULL;
+
+    [data writeToFile:appFile atomically:YES encoding:NSUTF8StringEncoding error:&error];
+
+    if (error != NULL) {
+        //Check Error Here. if any.
+    }
+}
+
++(NSString *)readFile:(NSString *)fileName {
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *documentsDirectory = [paths objectAtIndex:0];
+    NSString *appFile = [documentsDirectory stringByAppendingPathComponent:fileName];
+    NSFileManager *fileManager=[NSFileManager defaultManager];
+    if ([fileManager fileExistsAtPath:appFile])
+    {
+        NSError *error= NULL;
+        id resultData=[NSString stringWithContentsOfFile:appFile encoding:NSUTF8StringEncoding error:&error];
+        if (error == NULL)
+        {
+            return resultData;
+        }
+    }
+    return NULL;
+}
+
++(void)saveImageFromDocuments: (UIImage*)image withName:(NSString*)filename {
+    if (image != nil)
+    {
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
+                                                             NSUserDomainMask, YES);
+        NSString *documentsDirectory = [paths objectAtIndex:0];
+        NSString* path = [documentsDirectory stringByAppendingPathComponent:
+                          [NSString stringWithString: filename] ];
+        NSData* data = UIImageJPEGRepresentation(image, 1);
+        [data writeToFile:path atomically:YES];
+    }
+}
++ (UIImage*)loadImageFromDocuments:(NSString*)filename {
+    if(filename == nil || [filename isEqualToString:@""]) return nil;
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
+                                                         NSUserDomainMask, YES);
+    NSString *documentsDirectory = [paths objectAtIndex:0];
+    NSString* path = [documentsDirectory stringByAppendingPathComponent:
+                      [NSString stringWithString: filename] ];
+    UIImage* image = [UIImage imageWithContentsOfFile:path];
+    return image;
+}
+
++ (BOOL)removeFileFromDocuments:(NSString *)fileName {
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSString * documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+    
+    NSString *filePath = [documentsPath stringByAppendingPathComponent:fileName];
+    NSError *error;
+    BOOL success =[fileManager removeItemAtPath:filePath error:&error];
+    return success;
 }
 
 @end

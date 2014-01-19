@@ -11,5 +11,4 @@
 
 @interface PassthroughView : UIView
 @property (strong, nonatomic) UIView           * passer;
-@property (weak, nonatomic)   NSMutableArray   * books;
 @end
