@@ -162,6 +162,17 @@
     return success;
 }
 
++ (void)addParam:(NSString**)url key:(NSString*)key value:(NSString*)value {
+    NSMutableString * temp = [NSMutableString stringWithString:*url];
+    if ([temp rangeOfString:@"?"].location == NSNotFound) {
+        [temp appendFormat:@"?%@=%@", key, value];
+    }
+    else {
+        [temp appendFormat:@"&%@=%@", key, value];
+    }
+    *url = [NSString stringWithString:temp];
+}
+
 @end
 
 

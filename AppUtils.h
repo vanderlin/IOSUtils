@@ -54,6 +54,9 @@
 #endif
 
 // ----------------------------------------------------------------
+typedef void (^BasicBlock)(void);
+
+// ----------------------------------------------------------------
 static void printAllFonts() {
     for (NSString *familyName in [UIFont familyNames]) {
         for (NSString *fontName in [UIFont fontNamesForFamilyName:familyName]) {
@@ -61,6 +64,7 @@ static void printAllFonts() {
         }
     }
 }
+
 
 // ----------------------------------------------------------------
 @interface AppUtils : NSObject
@@ -84,8 +88,15 @@ static void printAllFonts() {
 + (void)saveImageFromDocuments:(UIImage*)image withName:(NSString*)filename;
 + (UIImage*)loadImageFromDocuments:(NSString*)filename;
 + (BOOL)removeFileFromDocuments:(NSString *)fileName;
++ (void)addParam:(NSString**)url key:(NSString*)key value:(NSString*)value;
+
 @end
 
+
+
+
+
+#pragma mark --- UIView ---
 @interface UIView (UIViewExtension)
 -(void)translate:(CGPoint)position;
 -(CALayer*)getSublayerNamed:(NSString*)name;
@@ -103,9 +114,17 @@ static void printAllFonts() {
 -(CALayer*)addLeftBorder:(UIColor*)color;
 -(void)removeLayerName:(NSString*)name;
 -(void)setWidth:(CGFloat)width andHeight:(CGFloat)height;
+-(void)fadeToAlpha:(CGFloat)alpha speed:(CGFloat)speed delay:(CGFloat)delay onComplete:(BasicBlock)completeBlock;
 
 @end
 @implementation UIView (UIViewExtension)
+-(void)fadeToAlpha:(CGFloat)alpha speed:(CGFloat)speed delay:(CGFloat)delay onComplete:(BasicBlock)completeBlock {
+    [UIView animateWithDuration:speed delay:delay options:UIViewAnimationOptionBeginFromCurrentState|UIViewAnimationOptionCurveEaseOut animations:^{
+        self.alpha = alpha;
+    } completion:^(BOOL fin) {
+        if(completeBlock) completeBlock();
+    }];
+}
 -(void)translate:(CGPoint)position {
     CGRect r = self.frame;
     r.origin = position;
@@ -196,14 +215,77 @@ static void printAllFonts() {
 }
 @end
 
+
+#pragma mark --- UIImage ---
 //--------------------------------------------------------------
 // UIImage Extensions
 //--------------------------------------------------------------
 @interface UIImage (UIImageExtension)
 - (UIImage *)crop:(CGRect)rect;
+- (UIImage *)imageByScalingProportionallyToSize:(CGSize)targetSize;
 + (UIImage*)imageWithImage:(UIImage*)image scaledToSize:(CGSize)newSize;
 @end
 @implementation UIImage (UIImageExtension)
+- (UIImage *)imageByScalingProportionallyToSize:(CGSize)targetSize {
+    
+    UIImage *sourceImage = self;
+    UIImage *newImage = nil;
+    
+    CGSize imageSize = sourceImage.size;
+    CGFloat width = imageSize.width;
+    CGFloat height = imageSize.height;
+    
+    CGFloat targetWidth = targetSize.width;
+    CGFloat targetHeight = targetSize.height;
+    
+    CGFloat scaleFactor = 0.0;
+    CGFloat scaledWidth = targetWidth;
+    CGFloat scaledHeight = targetHeight;
+    
+    CGPoint thumbnailPoint = CGPointMake(0.0,0.0);
+    
+    if (CGSizeEqualToSize(imageSize, targetSize) == NO) {
+        
+        CGFloat widthFactor = targetWidth / width;
+        CGFloat heightFactor = targetHeight / height;
+        
+        if (widthFactor < heightFactor)
+            scaleFactor = widthFactor;
+        else
+            scaleFactor = heightFactor;
+        
+        scaledWidth  = width * scaleFactor;
+        scaledHeight = height * scaleFactor;
+        
+        // center the image
+        
+        if (widthFactor < heightFactor) {
+            thumbnailPoint.y = (targetHeight - scaledHeight) * 0.5;
+        } else if (widthFactor > heightFactor) {
+            thumbnailPoint.x = (targetWidth - scaledWidth) * 0.5;
+        }
+    }
+    
+    
+    // this is actually the interesting part:
+    
+    UIGraphicsBeginImageContext(targetSize);
+    
+    CGRect thumbnailRect = CGRectZero;
+    thumbnailRect.origin = thumbnailPoint;
+    thumbnailRect.size.width  = scaledWidth;
+    thumbnailRect.size.height = scaledHeight;
+    
+    [sourceImage drawInRect:thumbnailRect];
+    
+    newImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    if(newImage == nil) NSLog(@"could not scale image");
+    
+    
+    return newImage ;
+}
 - (UIImage *)crop:(CGRect)rect {
     rect = CGRectMake(rect.origin.x*self.scale,
                       rect.origin.y*self.scale,
@@ -220,7 +302,7 @@ static void printAllFonts() {
 + (UIImage*)imageWithImage:(UIImage*)image scaledToSize:(CGSize)newSize {
     
     float hRatio = image.size.height / image.size.width;
-    float vRatio = image.size.width / image.size.height;
+    //float vRatio = image.size.width / image.size.height;
     
     
     UIGraphicsBeginImageContext( newSize );
@@ -231,7 +313,17 @@ static void printAllFonts() {
 }
 @end
 
+@interface UIImageView (UIImageViewExtension)
++(UIImageView*) imageViewWithImageNamed:(NSString*)filename;
+@end
+@implementation UIImageView (UIImageViewExtension)
++(UIImageView*) imageViewWithImageNamed:(NSString *)filename {
+    UIImage * img = [UIImage imageNamed:filename];
+    return [[UIImageView alloc] initWithImage:img];
+}
+@end
 
+#pragma mark --- UIColor ---
 //--------------------------------------------------------------
 // UIColor Extensions
 //--------------------------------------------------------------
@@ -242,18 +334,19 @@ static void printAllFonts() {
 
 @implementation UIColor (Extensions)
 + (UIColor *)colorWithHex:(int)hexColor alpha:(CGFloat)alpha {
-    float r = (hexColor >> 16) & 0xff;
-	float g = (hexColor >> 8) & 0xff;
-	float b = (hexColor >> 0) & 0xff;
+    double r = (hexColor >> 16) & 0xff;
+	double g = (hexColor >> 8) & 0xff;
+	double b = (hexColor >> 0) & 0xff;
     return [UIColor colorWithRed:r/255.0 green:g/255.0 blue:b/255.0 alpha:alpha];
 }
 + (UIColor *)colorWithColor:(UIColor*)color alpha:(CGFloat)alpha {
-    float r,g,b,a;
+    double r,g,b,a;
     [color getRed:&r green:&g blue:&b alpha:&a];
     return [UIColor colorWithRed:r green:g blue:b alpha:alpha];
 }
 @end
 
+#pragma mark --- NSDate ---
 //--------------------------------------------------------------
 // NSDate Extensions
 //--------------------------------------------------------------
@@ -267,12 +360,18 @@ static void printAllFonts() {
 -(NSInteger)getHour;
 -(NSInteger)getMinutes;
 -(NSInteger)getSeconds;
-
+-(NSInteger)getDayOfYear;
 
 - (BOOL)isMidnight;
 @end
 @implementation NSDate (DateExtensions)
 
+-(NSInteger)getDayOfYear {
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"D"];
+    NSUInteger dayOfYear = [[formatter stringFromDate:self] intValue];
+    return dayOfYear;
+}
 - (NSDate *)beginningOfDay {
     NSCalendar *calendar = [NSCalendar currentCalendar];
     
@@ -319,7 +418,7 @@ static void printAllFonts() {
 }
 @end
 
-
+#pragma mark --- NSDictionary ---
 //--------------------------------------------------------------
 // NSDictionary Extensions
 //--------------------------------------------------------------
@@ -333,3 +432,115 @@ static void printAllFonts() {
     return object;
 }
 @end
+
+
+
+#pragma mark --- NSString ---
+//--------------------------------------------------------------
+// NSString Extensions
+//--------------------------------------------------------------
+@interface NSString (NSStringExtensions)
++(NSString*)stringWithInt:(NSInteger)intValue;
+@end
+@implementation NSString (NSStringExtensions)
++(NSString*)stringWithInt:(NSInteger)intValue {
+    return [NSString stringWithFormat:@"%i", intValue];
+}
+@end
+
+
+
+
+
+
+
+
+
+//--------------------------------------------------------------
+// AppURLConnection
+//--------------------------------------------------------------
+/*@interface AppURLConnection: NSObject <NSURLConnectionDelegate, NSURLConnectionDataDelegate> {
+    NSURLConnection * internalConnection;
+    NSMutableData * container;
+}
+-(id)initWithRequest:(NSURLRequest *)req;
+@property (nonatomic,copy)NSURLConnection * internalConnection;
+@property (nonatomic,copy)NSURLRequest *request;
+@property (nonatomic,copy)void (^completitionBlock) (id obj, NSError * err);
+-(void)start;
+@end
+
+static NSMutableArray *sharedConnectionList = nil;
+
+@implementation AppURLConnection
+@synthesize request,completitionBlock,internalConnection;
+
+-(id)initWithRequest:(NSURLRequest *)req {
+    self = [super init];
+    if (self) {
+        [self setRequest:req];
+    }
+    return self;
+}
+
+-(void)start {
+    
+    container = [[NSMutableData alloc]init];
+    
+    internalConnection = [[NSURLConnection alloc]initWithRequest:[self request] delegate:self startImmediately:YES];
+    
+    if(!sharedConnectionList)
+        sharedConnectionList = [[NSMutableArray alloc] init];
+    [sharedConnectionList addObject:self];
+    
+}
+
+-(void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data {
+    [container appendData:data];
+}
+
+//If finish, return the data and the error nil
+-(void)connectionDidFinishLoading:(NSURLConnection *)connection {
+    
+    if([self completitionBlock])
+        [self completitionBlock](container,nil);
+    
+    [sharedConnectionList removeObject:self];
+    
+}
+
+//If fail, return nil and an error
+-(void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
+    
+    if([self completitionBlock])
+        [self completitionBlock](nil,error);
+    
+    [sharedConnectionList removeObject:self];
+    
+}
+
+@end*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
