@@ -68,7 +68,7 @@
 	if (x == y) return x;// float == ?, wise? epsilon?
 	high = MAX(x,y);
 	low = MIN(x,y);
-	randNum = low + ((high-low) * rand()/(RAND_MAX + 1.0));
+	randNum = low + ((high-low) * arc4random()/(RAND_MAX + 1.0));
 	return randNum;
 }
 
@@ -77,7 +77,7 @@
 // random max
 // ---------------------------------------------------------------
 + (CGFloat)random:(CGFloat)max {
-	return max * rand() / (RAND_MAX + 1.0f);
+	return max * arc4random() / (RAND_MAX + 1.0f);
 }
 
 // ---------------------------------------------------------------

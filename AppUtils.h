@@ -382,11 +382,26 @@ static void printAllFonts() {
 -(NSInteger)getMinutes;
 -(NSInteger)getSeconds;
 -(NSInteger)getDayOfYear;
+-(NSInteger)getWeekday;
 
+- (BOOL)isToday;
+- (BOOL)isThisMonth;
+- (BOOL)isThisYear;
 - (BOOL)isMidnight;
+- (BOOL)isGreaterThanDate:(NSDate*)date;
+- (BOOL)isLessThanDate:(NSDate*)date;
+
+- (NSString*)stringWithFormat:(NSString*)format;
+- (NSInteger)hoursSince:(NSDate *)secondDate;
+
 @end
 @implementation NSDate (DateExtensions)
 
+-(NSInteger)hoursSince:(NSDate *)secondDate {
+    NSCalendar *calendar = [NSCalendar currentCalendar];
+    NSDateComponents * components = [calendar components:NSHourCalendarUnit fromDate:self toDate:secondDate options:0];
+    return [components hour]+1;
+}
 -(NSInteger)getDayOfYear {
     NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
     [formatter setDateFormat:@"D"];
@@ -408,9 +423,31 @@ static void printAllFonts() {
     
     return [[calendar dateByAddingComponents:components toDate:[self beginningOfDay] options:0] dateByAddingTimeInterval:-1];
 }
+-(BOOL)isGreaterThanDate:(NSDate *)date {
+    return self.timeIntervalSince1970 > date.timeIntervalSince1970;
+}
+-(BOOL)isLessThanDate:(NSDate *)date {
+    return self.timeIntervalSince1970 < date.timeIntervalSince1970;
+}
+-(BOOL)isToday {
+    NSDate * today = [NSDate date];
+    return ([today getDay] == [self getDay] && [today getYear] == [self getYear] && [today getMonth] == [self getMonth]);
+}
+-(BOOL)isThisMonth {
+    NSDate * today = [NSDate date];
+    return ([today getYear] == [self getYear] && [today getMonth] == [self getMonth]);
+}
+-(BOOL)isThisYear {
+    NSDate * today = [NSDate date];
+    return ([today getYear] == [self getYear]);
+}
 -(NSInteger)getDay {
-    NSDateComponents * components = [[NSCalendar currentCalendar] components:NSDayCalendarUnit | NSMonthCalendarUnit | NSYearCalendarUnit fromDate:self];
+    NSDateComponents * components = [[NSCalendar currentCalendar] components:NSDayCalendarUnit | NSWeekdayCalendarUnit | NSMonthCalendarUnit | NSYearCalendarUnit fromDate:self];
     return [components day];
+}
+-(NSInteger)getWeekday {
+    NSDateComponents * components = [[NSCalendar currentCalendar] components:NSWeekdayCalendarUnit | NSDayCalendarUnit | NSMonthCalendarUnit | NSYearCalendarUnit fromDate:self];
+    return [components weekday];
 }
 -(NSInteger)getMonth {
     NSDateComponents * components = [[NSCalendar currentCalendar] components:NSDayCalendarUnit | NSMonthCalendarUnit | NSYearCalendarUnit fromDate:self];
@@ -436,6 +473,12 @@ static void printAllFonts() {
 -(BOOL)isMidnight {
     NSDateComponents * components = [[NSCalendar currentCalendar] components:NSDayCalendarUnit | NSMonthCalendarUnit | NSYearCalendarUnit | NSHourCalendarUnit | NSCalendarUnitSecond | NSCalendarUnitMinute fromDate:self];
     return [components hour] == 0;
+}
+
+-(NSString*)stringWithFormat:(NSString*)format {
+    NSDateFormatter * dateFmt = [[NSDateFormatter alloc] init];
+    [dateFmt setDateFormat:format];
+    return [dateFmt stringFromDate:self];
 }
 @end
 
@@ -465,12 +508,32 @@ static void printAllFonts() {
 @end
 @implementation NSString (NSStringExtensions)
 +(NSString*)stringWithInt:(NSInteger)intValue {
-    return [NSString stringWithFormat:@"%i", intValue];
+    return [NSString stringWithFormat:@"%i", (int)intValue];
 }
 @end
 
 
+/*
+#pragma mark --- NSObject ---
+//--------------------------------------------------------------
+// NSObject Extensions
+//--------------------------------------------------------------
+@interface NSObject (NSObjectExtensions)
+- (void)performBlock:(void (^)())block afterDelay:(NSTimeInterval)delay;
+@end
 
+@implementation NSObject (Blocks)
+
+- (void)performBlock:(void (^)())block {
+    block();
+}
+
+- (void)performBlock:(void (^)())block afterDelay:(NSTimeInterval)delay {
+    void (^block_)() = [block copy]; // autorelease this if you're not using ARC
+    [self performSelector:@selector(performBlock:) withObject:block_ afterDelay:delay];
+}
+
+@end*/
 
 
 
