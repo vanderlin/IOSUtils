@@ -109,7 +109,10 @@ static void printAllFonts() {
 
 #pragma mark --- UIView ---
 @interface UIView (UIViewExtension)
+
 -(void)translate:(CGPoint)position;
+-(void)centerInView:(UIView*)other;
+
 -(CALayer*)getSublayerNamed:(NSString*)name;
 -(CGPoint) getTopRight;
 -(CGPoint) getTopLeft;
@@ -143,6 +146,9 @@ static void printAllFonts() {
     CGRect r = self.frame;
     r.origin = position;
     self.frame = r;
+}
+-(void)centerInView:(UIView*)other {
+    [self translate:CGPointMake((other.frame.size.width-self.frame.size.width)/2, (other.frame.size.height-self.frame.size.height)/2)];
 }
 -(CALayer*) getSublayerNamed:(NSString *)name {
     for(CALayer * ca in self.layer.sublayers) {
